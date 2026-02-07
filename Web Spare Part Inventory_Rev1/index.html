@@ -1,0 +1,2779 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spare Part Inventory System (Fixed)</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        :root {
+            /* Theme Colors */
+            --bg-body: #f8fafc;
+            --bg-sidebar: #0f172a;
+            --bg-card: #ffffff;
+            --primary: #4f46e5;       /* Indigo 600 */
+            --primary-light: #818cf8; /* Indigo 400 */
+            --primary-dark: #4338ca;  /* Indigo 700 */
+            
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #0ea5e9;
+
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            
+            --radius: 0.75rem;
+        }
+
+        * { box-sizing: border-box; outline: none; }
+
+        body {
+            font-family: 'Inter', 'Sarabun', sans-serif;
+            margin: 0;
+            background-color: var(--bg-body);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* --- Login Screen --- */
+        #login-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f172a; z-index: 9999;
+            display: flex; align-items: center; justify-content: center;
+            display: none; 
+        }
+        .login-box {
+            background: white; padding: 2.5rem; border-radius: 1rem; width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); text-align: center;
+        }
+
+        /* --- Sidebar --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--bg-sidebar);
+            display: flex;
+            flex-direction: column;
+            padding: 1.5rem;
+            color: #f8fafc;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.05);
+            z-index: 20;
+            transition: width 0.3s ease;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 2.5rem;
+            color: #fff;
+            padding-left: 0.5rem;
+        }
+        
+        .brand i { color: var(--primary-light); font-size: 1.5rem; }
+
+        .nav-menu { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+
+        .nav-item {
+            padding: 0.85rem 1rem;
+            border-radius: var(--radius);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: #94a3b8;
+            font-weight: 500;
+            font-size: 0.95rem;
+            position: relative;
+        }
+
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            transform: translateX(5px);
+        }
+
+        .nav-item.active {
+            background: linear-gradient(90deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.4);
+        }
+
+        /* Menu Badge */
+        .nav-badge {
+            position: absolute;
+            right: 10px;
+            background: var(--danger);
+            color: white;
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-weight: bold;
+            display: none; /* Hidden by default */
+        }
+
+        /* User Profile Redesigned for Long Names */
+        .user-profile {
+            margin-top: auto;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            flex-direction: column; /* Stack Vertically */
+            gap: 12px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            width: 100%;
+        }
+
+        .user-details {
+            flex: 1;
+            overflow: hidden;
+            min-width: 0; /* Important for text-overflow to work in flex child */
+        }
+
+        #display-name {
+            font-weight: 600; 
+            font-size: 0.95rem; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis;
+        }
+
+        #display-role {
+            font-size: 0.75rem; 
+            color: #94a3b8; 
+            white-space: nowrap; 
+            overflow: hidden; 
+            text-overflow: ellipsis;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+        }
+
+        .avatar {
+            width: 42px; height: 42px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; color: white;
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.2);
+            flex-shrink: 0;
+        }
+
+        /* --- Main Content --- */
+        .main-content {
+            flex: 1;
+            padding: 2rem;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-main);
+            letter-spacing: -0.5px;
+        }
+
+        /* --- Cards & UI --- */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            padding: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--border);
+            margin-bottom: 1.5rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card:hover {
+            box-shadow: var(--shadow-md);
+        }
+
+        .hover-card { cursor: pointer; border-left: 4px solid transparent; }
+        .hover-card:hover { transform: translateY(-3px); border-left-color: var(--primary); }
+
+        /* Buttons */
+        .btn {
+            padding: 0.6rem 1.25rem;
+            border-radius: 0.5rem;
+            border: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: inherit;
+            display: inline-flex; align-items: center; gap: 8px;
+            font-size: 0.9rem;
+        }
+
+        .btn-primary { 
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white; 
+            box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.2);
+        }
+        .btn-primary:hover { 
+            box-shadow: 0 6px 10px -1px rgba(79, 70, 229, 0.3); 
+            transform: translateY(-1px); 
+        }
+
+        .btn-action { 
+            background: white; border: 1px solid var(--border); color: var(--text-main); 
+            padding: 0.4rem 0.8rem; font-size: 0.8rem;
+        }
+        .btn-action:hover:not(:disabled) { background: #f8fafc; border-color: #cbd5e1; }
+        
+        .btn-action.withdraw { color: #d97706; border-color: #fcd34d; background: #fffbeb; }
+        .btn-action.withdraw:hover { background: #fef3c7; border-color: #fbbf24; }
+
+        .btn-success { 
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white; 
+            border: none;
+            box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
+        }
+        .btn-success:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 10px -1px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-danger { 
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white; 
+            border: none;
+        }
+        
+        /* Logout Button Custom Style */
+        .btn-logout {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1; /* Stretch to fill space */
+            height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+        }
+        .btn-logout:hover {
+            background-color: #ef4444;
+            color: white;
+            border-color: #ef4444;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+        }
+        
+        /* Report Issue Button (Sidebar) */
+        .btn-report {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #cbd5e1;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex: 1; /* Stretch to fill space */
+            height: 36px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1rem;
+        }
+        .btn-report:hover {
+            background-color: #f59e0b; /* Warning color */
+            color: white;
+            border-color: #f59e0b;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; filter: grayscale(1); transform: none !important; box-shadow: none !important; }
+
+        .input-icon-wrap { position: relative; }
+        .input-icon-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; }
+        .input-icon-wrap input { padding-left: 36px; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        th { 
+            text-align: left; padding: 1rem 1.5rem; background: #f8fafc; 
+            color: #64748b; font-weight: 600; font-size: 0.8rem; text-transform: uppercase; 
+            border-bottom: 1px solid var(--border);
+        }
+        td { 
+            padding: 1rem 1.5rem; border-bottom: 1px solid #f1f5f9; 
+            color: #334155; font-size: 0.95rem; vertical-align: middle;
+        }
+        tbody tr:hover { background-color: #f8fafc; }
+        
+        /* Table Image */
+        .part-img-thumb {
+            width: 45px; height: 45px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background-color: #fff;
+        }
+
+        /* Badges */
+        .badge { padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; display: inline-flex; align-items: center; gap: 5px; }
+        .bg-green { background: #dcfce7; color: #15803d; }
+        .bg-yellow { background: #fef3c7; color: #b45309; }
+        .bg-red { background: #fee2e2; color: #b91c1c; }
+        .bg-blue { background: #e0f2fe; color: #0369a1; }
+        .bg-purple { background: #f3e8ff; color: #7e22ce; }
+        .bg-gray { background: #f3f4f6; color: #4b5563; }
+        .bg-orange { background: #ffedd5; color: #c2410c; }
+
+        /* Modals */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000;
+            align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease;
+        }
+        .modal-overlay.open { display: flex; opacity: 1; }
+
+        .modal-window {
+            background: var(--bg-card); width: 90%; max-width: 1000px; max-height: 90vh;
+            border-radius: var(--radius); box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            display: flex; flex-direction: column; transform: scale(0.95); transition: transform 0.3s;
+        }
+        .modal-overlay.open .modal-window { transform: scale(1); }
+
+        .modal-header { padding: 1.5rem 2rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .modal-title { font-size: 1.25rem; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 10px;}
+        .modal-close { cursor: pointer; font-size: 1.5rem; color: #94a3b8; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 50%; line-height: 1; transition: all 0.2s; }
+        .modal-close:hover { color: var(--danger); background: #fee2e2; transform: rotate(90deg); }
+        .modal-body { padding: 2rem; overflow-y: auto; background-color: #f8fafc; flex: 1; }
+
+        .form-group { margin-bottom: 1.25rem; }
+        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem; color: #475569; }
+        
+        /* Enhanced Form Control */
+        .form-control { 
+            width: 100%; padding: 0.75rem; 
+            border: 1px solid var(--border); border-radius: 0.5rem; font-size: 0.95rem;
+            background-color: #fff;
+            transition: all 0.2s ease-in-out;
+        }
+        .form-control:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+            outline: none;
+        }
+        .form-control[readonly] {
+            background-color: #f1f5f9;
+            border-color: #e2e8f0;
+            color: #64748b;
+            cursor: not-allowed;
+        }
+        
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; } 
+        .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+        
+        /* Manager Only Elements */
+        .manager-only { display: none; }
+        
+        /* Notification Badge on Button */
+        .btn-badge-container { position: relative; }
+        .btn-badge { 
+            position: absolute; top: -5px; right: -5px; 
+            background: var(--danger); color: white; 
+            border-radius: 50%; width: 20px; height: 20px; 
+            font-size: 0.7rem; display: flex; align-items: center; justify-content: center;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Upload Area (Enhanced) */
+        .upload-area {
+            background-color: #f8fafc;
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .upload-area:hover { 
+            background-color: #e0e7ff; 
+            border-color: var(--primary); 
+            transform: translateY(-2px);
+        }
+        .upload-preview { width: 120px; height: 120px; object-fit: cover; border-radius: 12px; margin-top: 15px; display: none; border: 1px solid var(--border); box-shadow: var(--shadow-sm); }
+
+        /* New Receive UI Specifics */
+        .search-hero {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+        .search-hero input {
+            padding-left: 50px;
+            height: 55px;
+            font-size: 1.15rem;
+            border-radius: 16px;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid #e2e8f0;
+            transition: all 0.2s;
+        }
+        .search-hero input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+        .search-hero i {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.3rem;
+            color: var(--primary);
+        }
+
+        .receive-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 2.5rem;
+            align-items: start;
+        }
+
+        .item-display-card {
+            background: linear-gradient(145deg, #ffffff, #f8fafc);
+            border: 1px solid #e2e8f0;
+            border-radius: 1.5rem;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+            transition: all 0.3s ease;
+        }
+
+        .item-display-card img {
+            width: 180px;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-md);
+            border: 4px solid white;
+        }
+
+        .item-empty-state {
+            color: #94a3b8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        .item-empty-state i {
+            font-size: 5rem;
+            opacity: 0.3;
+            color: var(--primary);
+        }
+
+        .action-form-card {
+            background: white;
+            border-radius: 1rem;
+            padding: 0.5rem; /* Inner padding handle by form content */
+        }
+        
+        /* Receive Section Cards */
+        .receive-option-card {
+            cursor: pointer; 
+            border: 2px solid transparent; 
+            transition: all 0.3s;
+            text-align: center;
+            padding: 4rem 2rem;
+            border-radius: 1.5rem;
+            background: white;
+            box-shadow: var(--shadow-sm);
+        }
+        .receive-option-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border-color: var(--primary-light);
+        }
+        .receive-icon-circle {
+            width: 90px; height: 90px; 
+            border-radius: 50%; 
+            display: flex; align-items: center; justify-content: center; 
+            margin: 0 auto 2rem;
+            font-size: 2.5rem;
+        }
+
+        /* Tabs for Receive Section (kept for compatibility if needed, though now using Modals) */
+        .btn-tab {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            background: none;
+            color: #64748b;
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .btn-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .btn-tab:hover { color: var(--primary); }
+    </style>
+</head>
+<body onload="checkAuth()"> 
+
+    <!-- Login Screen -->
+    <div id="login-screen">
+        <div class="login-box">
+            <h2 style="color: var(--primary); margin-bottom: 0.5rem;"><i class="fa-solid fa-microchip"></i> Inventory System</h2>
+            <p style="color: #64748b; margin-bottom: 2rem;">Secure Access System</p>
+            
+            <div style="text-align: left;">
+                <label class="form-label">Username</label>
+                <input type="text" id="login-user" class="form-control" placeholder="Enter username">
+                <label class="form-label">Password</label>
+                <input type="password" id="login-pass" class="form-control" placeholder="Enter password" onkeyup="if(event.key==='Enter')performLogin()">
+            </div>
+            
+            <button class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;" onclick="performLogin()">Login</button>
+            <div id="login-error-msg" style="color: #ef4444; font-size: 0.85rem; margin-top: 1rem; display: none;">Invalid username or password</div>
+            
+            <!-- NEW: Reset Password / Contact Admin Message -->
+            <div id="login-lock-msg" style="color: #b45309; font-size: 0.9rem; margin-top: 1rem; display: none; background: #fffbeb; padding: 15px; border-radius: 8px; border: 1px solid #fcd34d; text-align: left;">
+                <div style="display:flex; gap:10px; align-items:start; margin-bottom:10px;">
+                    <i class="fa-solid fa-triangle-exclamation" style="margin-top:3px;"></i>
+                    <span>ใส่รหัสผิดเกิน 3 ครั้ง<br>กรุณาติดต่อ Admin หรือขอรีเซ็ต</span>
+                </div>
+                <button class="btn btn-action btn-sm" style="width:100%; justify-content:center; border-color:#b45309; color:#b45309;" onclick="requestPasswordReset()">
+                    <i class="fa-solid fa-key"></i> ขอเปลี่ยนรหัสผ่าน (Reset)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="brand">
+            <i class="fa-solid fa-microchip"></i> &nbsp; Inventory System
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item active" id="nav-sparepart" onclick="switchTab('sparepart', this)">
+                <i class="fa-solid fa-boxes-stacked"></i> Spare Part
+                <span class="nav-badge" id="nav-badge-req">0</span>
+            </li>
+            <!-- New Receive Menu -->
+            <li class="nav-item perm-manager" id="nav-receive" onclick="switchTab('receive-section', this)">
+                <i class="fa-solid fa-dolly"></i> Receive Stock
+            </li>
+            <li class="nav-item perm-manager" id="nav-reports" onclick="switchTab('reports-section', this)">
+                <i class="fa-solid fa-chart-pie"></i> Reports & Analytics
+            </li>
+            <li class="nav-item perm-admin" onclick="openModal('modal-user')">
+                <i class="fa-solid fa-users-gear"></i> User Mgmt
+            </li>
+            <!-- NEW: Support Request Menu for Admin -->
+            <li class="nav-item perm-admin" onclick="openModal('modal-support-tickets')">
+                <i class="fa-solid fa-headset"></i> Support Req.
+                <span class="nav-badge" id="badge-support-count" style="display:none; background: var(--warning);">0</span>
+            </li>
+        </ul>
+        
+        <!-- User Profile (Redesigned for Long Names) -->
+        <div class="user-profile">
+            <div class="user-info">
+                <div class="avatar" id="user-avatar">?</div>
+                <div class="user-details">
+                    <div id="display-name">Guest</div>
+                    <div id="display-role">Please Login</div>
+                </div>
+            </div>
+            
+            <div class="user-actions">
+                <!-- Report Issue Button -->
+                <button class="btn-report" onclick="openModal('modal-report-issue')" title="Report Issue">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                </button>
+                <!-- Logout Button -->
+                <button class="btn-logout" onclick="logout()" title="Logout">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </button>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- ================= SECTION: SPARE PART ================= -->
+        <div id="sparepart" class="section active">
+            <div class="header">
+                <div>
+                    <div class="page-title">Spare Part Inventory</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted);">Manage and track spare parts stock</div>
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <!-- Track Orders Button -->
+                    <button class="btn btn-action" onclick="openModal('modal-purchase-tracking')">
+                        <i class="fa-solid fa-truck-fast"></i> Track Orders
+                    </button>
+                    <!-- Order Part Button -->
+                    <button class="btn btn-primary" onclick="openModal('modal-purchase-request')">
+                        <i class="fa-solid fa-cart-shopping"></i> Order Part
+                    </button>
+
+                      <!-- Manage Request Button (Manager Only) -->
+                    <button id="btn-manage-req" class="btn btn-action btn-badge-container manager-only" onclick="openModal('modal-part-requests')">
+                        <i class="fa-solid fa-list-check"></i> Manage Withdrawals
+                        <span class="btn-badge" id="badge-req-count" style="display:none;">0</span>
+                    </button>
+                    <!-- Add Part Button (Manager Only) -->
+                    <button id="btn-add-part" class="btn btn-primary manager-only" onclick="openPartForm('create')">
+                        <i class="fa-solid fa-plus"></i> Add New Part
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="grid-4 mb-4">
+                <!-- Total Items Card (Clickable to show all) -->
+                <div class="card hover-card" style="padding: 1.2rem; display: flex; align-items: center; justify-content: space-between;" onclick="filterParts('show_all_items')">
+                    <div>
+                        <div style="font-size: 0.8rem; color: #64748b; font-weight: 600;">TOTAL ITEMS</div>
+                        <div style="font-size: 1.8rem; font-weight: 800; color: #1e293b;" id="sp-total-items">0</div>
+                    </div>
+                    <div style="font-size: 1.5rem; color: #e2e8f0;"><i class="fa-solid fa-cubes"></i></div>
+                </div>
+                
+                <!-- Low Stock Card (Orange) -->
+                <div class="card hover-card" style="padding: 1.2rem; display: flex; align-items: center; justify-content: space-between;" onclick="filterParts('low_stock_filter')">
+                    <div>
+                        <div style="font-size: 0.8rem; color: #f59e0b; font-weight: 600;">LOW STOCK</div>
+                        <div style="font-size: 1.8rem; font-weight: 800; color: #f59e0b;" id="sp-low-stock">0</div>
+                    </div>
+                    <div style="font-size: 1.5rem; color: #fef3c7;"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                </div>
+
+                <!-- Out of Stock Card (Red) -->
+                <div class="card hover-card" style="padding: 1.2rem; display: flex; align-items: center; justify-content: space-between;" onclick="filterParts('out_of_stock_filter')">
+                    <div>
+                        <div style="font-size: 0.8rem; color: #ef4444; font-weight: 600;">OUT OF STOCK</div>
+                        <div style="font-size: 1.8rem; font-weight: 800; color: #ef4444;" id="sp-out-of-stock">0</div>
+                    </div>
+                    <div style="font-size: 1.5rem; color: #fee2e2;"><i class="fa-solid fa-ban"></i></div>
+                </div>
+
+                <!-- Card Requests -->
+                <div class="card hover-card" style="padding: 1.2rem; display: flex; align-items: center; justify-content: space-between;" onclick="openModal('modal-part-requests')">
+                    <div>
+                        <div style="font-size: 0.8rem; color: #64748b; font-weight: 600;">REQUESTS</div>
+                        <div style="font-size: 1.8rem; font-weight: 800; color: #1e293b;" id="sp-requests-count">0</div>
+                    </div>
+                    <div style="font-size: 1.5rem; color: #e2e8f0;"><i class="fa-solid fa-file-signature"></i></div>
+                </div>
+            </div>
+
+            <!-- Inventory Table -->
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #f1f5f9;">
+                    <div class="form-group" style="margin-bottom: 0; width: 300px;">
+                        <input type="text" class="form-control" placeholder="Search Part Name or No..." onkeyup="filterParts(this.value)">
+                   </div>
+                   <div style="font-size: 0.9rem; color: #64748b;">
+                        Showing all inventory
+                   </div>
+                </div>
+                
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 80px; text-align:center;">Image</th>
+                                <th style="width: 25%;">Part Name</th>
+                                <th style="width: 15%;">Part No.</th>
+                                <th style="width: 10%; text-align: center;">Qty</th>
+                                <th style="width: 15%; text-align: center;">Location</th>
+                                <th style="width: 15%; text-align: center;">Status</th>
+                                <th style="width: 15%; text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sparepart-table-body">
+                            <!-- JS Injected -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SECTION: RECEIVE STOCK (NEW) ================= -->
+        <div id="receive-section" class="section">
+            <div class="header">
+                <div>
+                    <div class="page-title">Receive Stock</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted);">เลือกประเภทการรับเข้าสินค้า (Select Receive Type)</div>
+                </div>
+            </div>
+
+            <div class="grid-2" style="max-width: 900px; margin: 2rem auto; gap: 2rem;">
+                <!-- Option 1: Existing Item -->
+                <div class="receive-option-card" onclick="openModal('modal-receive-existing')">
+                    <div class="receive-icon-circle" style="background: #e0e7ff; color: var(--primary);">
+                        <i class="fa-solid fa-box-open"></i>
+                    </div>
+                    <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">รับของที่มีในระบบ</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 2rem;">Existing Item Restock</p>
+                    <button class="btn btn-primary" style="width: 100%; justify-content: center; padding: 0.8rem;">
+                        <i class="fa-solid fa-arrow-right"></i> ดำเนินการ (Proceed)
+                    </button>
+                </div>
+
+                <!-- Option 2: New Item -->
+                <div class="receive-option-card" onclick="openModal('modal-receive-new')">
+                    <div class="receive-icon-circle" style="background: #dcfce7; color: var(--success);">
+                        <i class="fa-solid fa-square-plus"></i>
+                    </div>
+                    <h2 style="font-size: 1.5rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.5rem;">เพิ่มสินค้าใหม่</h2>
+                    <p style="color: var(--text-muted); margin-bottom: 2rem;">New Item Registration</p>
+                    <button class="btn btn-success" style="width: 100%; justify-content: center; padding: 0.8rem;">
+                        <i class="fa-solid fa-plus"></i> ดำเนินการ (Proceed)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= SECTION: REPORTS (FULL PAGE) ================= -->
+        <div id="reports-section" class="section">
+            <div class="header">
+                <div>
+                    <div class="page-title">Reports & Analytics</div>
+                    <div style="font-size: 0.9rem; color: var(--text-muted);">ภาพรวมการเบิกจ่ายและสถิติ (Overview & Statistics)</div>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-action" onclick="handleRefresh()">
+                        <i class="fa-solid fa-rotate-right"></i> Refresh Data
+                    </button>
+                </div>
+            </div>
+
+            <!-- Summary Dashboard Cards -->
+            <div class="grid-4 mb-4" style="grid-template-columns: repeat(3, 1fr);">
+                <div class="card" style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Total Withdrawals</div>
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--primary);" id="rpt-total-wd">0</div>
+                        <div style="font-size: 0.8rem; color: #94a3b8;">Items withdrawn (All time)</div>
+                    </div>
+                    <div style="font-size: 2rem; color: #e0e7ff;"><i class="fa-solid fa-dolly-flatbed"></i></div>
+                </div>
+                <div class="card" style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Most Popular Part</div>
+                        <div style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-bottom: 5px;" id="rpt-pop-part">-</div>
+                        <div style="font-size: 0.8rem; color: #10b981;" id="rpt-pop-qty">0 units</div>
+                    </div>
+                    <div style="font-size: 2rem; color: #dcfce7;"><i class="fa-solid fa-award"></i></div>
+                </div>
+                <div class="card" style="padding: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                    <div>
+                        <div style="font-size: 0.85rem; color: #64748b; font-weight: 600; text-transform: uppercase;">Pending Requests</div>
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--warning);" id="rpt-pending">0</div>
+                        <div style="font-size: 0.8rem; color: #94a3b8;">Waiting for approval</div>
+                    </div>
+                    <div style="font-size: 2rem; color: #fef3c7;"><i class="fa-solid fa-hourglass-half"></i></div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid-2" style="margin-bottom: 2rem; grid-template-columns: 2fr 1fr;">
+                <div class="card">
+                    <h3 style="margin-top: 0; font-size: 1rem; color: var(--text-main); border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                        Top 5 Most Withdrawn Parts
+                    </h3>
+                    <div style="height: 300px;">
+                        <canvas id="chartTopParts"></canvas>
+                    </div>
+                </div>
+                <div class="card">
+                    <h3 style="margin-top: 0; font-size: 1rem; color: var(--text-main); border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                        Request Status Overview
+                    </h3>
+                    <div style="height: 300px; display: flex; justify-content: center;">
+                        <canvas id="chartStatus"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Tables -->
+            <div class="card mb-4">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 style="margin: 0; font-size: 1.1rem; color: #374151;">Withdrawal History (ประวัติการเบิกจ่าย)</h3>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" class="form-control" placeholder="Search..." style="width: 200px; padding: 0.3rem 0.5rem; font-size: 0.9rem;" onkeyup="filterHistoryTable('report-withdrawal-body', this.value)" id="search-wd-history">
+                        <button class="btn btn-action" onclick="exportToCSV('report-withdrawal-body', 'withdrawal_history')">Export CSV</button>
+                    </div>
+                </div>
+                <div style="overflow-x: auto; max-height: 400px;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="white-space: nowrap; position: sticky; top: 0; background: #f8fafc; z-index: 1;">Time</th>
+                                <th style="white-space: nowrap; position: sticky; top: 0; background: #f8fafc; z-index: 1;">Part Name</th>
+                                <th style="white-space: nowrap; position: sticky; top: 0; background: #f8fafc; z-index: 1;">Qty</th>
+                                <th style="white-space: nowrap; position: sticky; top: 0; background: #f8fafc; z-index: 1;">Requester</th>
+                                <th style="white-space: nowrap; position: sticky; top: 0; background: #f8fafc; z-index: 1;">Station</th>
+                                <th style="white-space: nowrap; position: sticky; top: 0; background: #f8fafc; z-index: 1;">Status</th>
+                                <th style="white-space: nowrap; position: sticky; top: 0; background: #f8fafc; z-index: 1;">Action By</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-withdrawal-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 style="margin: 0; font-size: 1.1rem; color: #374151;">Stock Edit History (ประวัติการแก้ไขสต็อก)</h3>
+                    <div style="display: flex; gap: 10px;">
+                         <input type="text" class="form-control" placeholder="Search..." style="width: 200px; padding: 0.3rem 0.5rem; font-size: 0.9rem;" onkeyup="filterHistoryTable('report-edit-history-body', this.value)" id="search-ed-history">
+                         <button class="btn btn-action" onclick="exportToCSV('report-edit-history-body', 'stock_edit_history')">Export CSV</button>
+                    </div>
+                </div>
+                <div style="overflow-x: auto; max-height: 400px;">
+                    <table>
+                        <thead>
+                            <tr style="background: #f8fafc;">
+                                <th style="position: sticky; top: 0; background: #f8fafc; z-index: 1; width: 15%;">Time</th>
+                                <th style="position: sticky; top: 0; background: #f8fafc; z-index: 1; width: 10%;">Type</th> <!-- New Column -->
+                                <th style="position: sticky; top: 0; background: #f8fafc; z-index: 1; width: 15%;">Part No.</th>
+                                <th style="position: sticky; top: 0; background: #f8fafc; z-index: 1; width: 20%;">Part Name</th>
+                                <th style="position: sticky; top: 0; background: #f8fafc; z-index: 1; width: 25%;">Detail / Changes</th>
+                                <th style="position: sticky; top: 0; background: #f8fafc; z-index: 1; width: 15%;">Editor</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-edit-history-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ================= MODALS ================= -->
+
+    <!-- Modal: Receive Existing (Enhanced) -->
+    <div id="modal-receive-existing" class="modal-overlay">
+        <div class="modal-window" style="max-width: 1000px;">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fa-solid fa-box-open text-primary"></i> รับของที่มีในระบบ (Existing Item)</div>
+                <div class="modal-close" onclick="closeModal('modal-receive-existing')">&times;</div>
+            </div>
+            <div class="modal-body">
+                <div class="search-hero">
+                    <i class="fa-solid fa-search"></i>
+                    <input type="text" id="rc-search" class="form-control" list="rc-part-list" placeholder="ค้นหาชื่ออะไหล่ หรือ รหัส (Search Part Name / No.)..." onchange="onSelectReceivePart(this.value)">
+                    <datalist id="rc-part-list"></datalist>
+                </div>
+
+                <div class="receive-grid">
+                    <!-- Left: Item Display -->
+                    <div class="item-display-card" id="rc-card-container">
+                        <div id="rc-empty-state" class="item-empty-state">
+                            <i class="fa-solid fa-box-open"></i>
+                            <p>กรุณาเลือกรายการสินค้า<br>เพื่อทำรายการรับเข้า</p>
+                        </div>
+                        <div id="rc-part-info" style="display: none; width: 100%;">
+                            <img id="rc-info-img" src="">
+                            <h3 id="rc-info-name" style="margin: 0 0 5px 0; color: var(--text-main); font-weight:700;">Part Name</h3>
+                            <div id="rc-info-no" style="color: var(--text-muted); font-family: monospace; margin-bottom: 15px; font-size:1.1rem;">Part No</div>
+                            
+                            <div style="background: rgba(255,255,255,0.8); padding: 15px 25px; border-radius: 12px; margin-top: auto; border:1px solid #e2e8f0; text-align:center;">
+                                <small style="color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing:0.5px; font-size:0.8rem;">Current Stock</small>
+                                <div id="rc-info-qty" style="font-size: 2.5rem; font-weight: 800; color: var(--primary); line-height:1;">0</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Form -->
+                    <div class="action-form-card">
+                        <h3 style="margin-top: 0; margin-bottom: 1.5rem; color: var(--text-main); border-bottom: 1px solid #f1f5f9; padding-bottom: 10px; font-size:1.2rem;">
+                            <i class="fa-solid fa-file-import"></i> รายละเอียดการรับเข้า
+                        </h3>
+                        
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label class="form-label">จำนวนที่รับเข้า (Receive Qty)</label>
+                                <div class="input-icon-wrap">
+                                    <input type="number" id="rc-qty" class="form-control" min="1" value="1" style="font-size: 1.5rem; font-weight: bold; color: var(--primary); text-align:center; padding-left:0;">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">ผู้ดำเนินการ (Receiver)</label>
+                                <div style="position:relative;">
+                                    <input type="text" id="rc-user" class="form-control" readonly style="padding-left: 35px;">
+                                    <i class="fa-solid fa-lock" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.9rem;"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">หมายเหตุ / ที่มา (Remark/Source)</label>
+                            <textarea id="rc-remark" class="form-control" rows="4" placeholder="ระบุที่มาของสินค้า เช่น จาก Supplier A, คืนของจากไลน์ผลิต..."></textarea>
+                        </div>
+
+                        <button class="btn btn-success" style="width: 100%; padding: 1rem; font-size: 1.1rem; margin-top: 15px; border-radius:10px;" onclick="confirmReceiveExisting()">
+                            <i class="fa-solid fa-check-circle"></i> ยืนยันรับของ (Confirm Receive)
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Receive New (Enhanced) -->
+    <div id="modal-receive-new" class="modal-overlay">
+        <div class="modal-window" style="max-width: 850px;">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fa-solid fa-square-plus text-success"></i> เพิ่มสินค้าใหม่ (Register New Item)</div>
+                <div class="modal-close" onclick="closeModal('modal-receive-new')">&times;</div>
+            </div>
+            <div class="modal-body">
+                <div style="max-width: 800px; margin: 0 auto; padding-top: 1rem;">
+                    <div class="form-group" style="text-align: center; margin-bottom: 2rem;">
+                        <label class="upload-area" for="rc-new-image">
+                            <i class="fa-regular fa-image fa-3x" style="color: #94a3b8; margin-bottom: 10px; display:block; transition:all 0.2s;"></i>
+                            <span style="font-size: 1rem; color: #475569; font-weight:500;">คลิกเพื่ออัปโหลดรูปภาพ (Upload Image)</span>
+                            <input type="file" id="rc-new-image" accept="image/*" style="display: none;" onchange="handleReceiveNewImage(this)">
+                        </label>
+                        <center><img id="rc-new-preview" src="" class="upload-preview" alt="Preview"></center>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Part Name <span style="color:red">*</span></label>
+                            <input type="text" id="rc-new-name" class="form-control" placeholder="ชื่ออุปกรณ์">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Part No. <span style="color:red">*</span></label>
+                            <input type="text" id="rc-new-no" class="form-control" placeholder="รหัสอุปกรณ์">
+                        </div>
+                    </div>
+                    
+                    <div class="grid-3">
+                        <div class="form-group">
+                            <label class="form-label">Initial Qty (จำนวนแรกรับ)</label>
+                            <input type="number" id="rc-new-qty" class="form-control" min="0" value="1" style="font-weight:600; color:var(--text-main);">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Min Level</label>
+                            <input type="number" id="rc-new-min" class="form-control" min="0" value="5">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Location</label>
+                            <input type="text" id="rc-new-loc" class="form-control" placeholder="ตำแหน่งเก็บ">
+                        </div>
+                    </div>
+
+                    <div class="grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Supplier</label>
+                            <input type="text" id="rc-new-supplier" class="form-control" placeholder="ผู้จัดจำหน่าย">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Receiver (ผู้รับ)</label>
+                            <div style="position:relative;">
+                                <input type="text" id="rc-new-receiver" class="form-control" readonly style="padding-left:35px;">
+                                <i class="fa-solid fa-lock" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:0.9rem;"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" style="width: 100%; margin-top: 25px; padding: 1rem; font-size: 1.1rem; border-radius:10px; background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);" onclick="confirmReceiveNew()">
+                        <i class="fa-solid fa-plus-circle"></i> เพิ่มสินค้าใหม่เข้าระบบ (Add New Item)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Withdraw Part -->
+    <div id="modal-withdraw" class="modal-overlay" style="z-index: 1060;">
+        <div class="modal-window" style="max-width: 450px; height: auto;">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fa-solid fa-box-open text-primary"></i> เบิกอะไหล่ (Withdraw)</div>
+                <div class="modal-close" onclick="closeModal('modal-withdraw')">&times;</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Part Name</label>
+                    <input type="text" id="wd-name" class="form-control" readonly style="background-color: #f1f5f9;">
+                </div>
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Current Qty</label>
+                        <input type="number" id="wd-current" class="form-control" readonly style="background-color: #f1f5f9;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Withdraw Qty</label>
+                        <input type="number" id="wd-qty" class="form-control" min="1" value="1">
+                    </div>
+                </div>
+                
+                <!-- User Info -->
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Employee ID (EN)</label>
+                        <input type="text" id="wd-en" class="form-control" placeholder="รหัสพนักงาน">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Requester Name</label>
+                        <input type="text" id="wd-user" class="form-control" placeholder="ชื่อผู้เบิก">
+                    </div>
+                </div>
+
+                <!-- Location & Machine Info -->
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Station No.</label>
+                        <input type="text" id="wd-station" class="form-control" placeholder="เช่น ST-01">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Machine SN (รหัสเครื่อง)</label>
+                        <input type="text" id="wd-machine-sn" class="form-control" placeholder="ระบุ SN เครื่อง">
+                    </div>
+                </div>
+
+                <!-- Reason & Remark -->
+                <div class="form-group">
+                    <label class="form-label">Reason (เหตุผลที่เบิก)</label>
+                    <select id="wd-reason" class="form-control">
+                        <option value="">-- เลือกเหตุผล --</option>
+                        <option value="Broken">ของเดิมเสียหาย (Broken/Damaged)</option>
+                        <option value="PM">เปลี่ยนตามรอบ PM (Preventive)</option>
+                        <option value="Lost">ของหาย (Lost)</option>
+                        <option value="New">ติดตั้งใหม่ (New Installation)</option>
+                        <option value="Other">อื่นๆ (Other)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Remark (หมายเหตุ)</label>
+                    <textarea id="wd-remark" class="form-control" rows="2" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
+                </div>
+
+                <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="saveWithdraw()">Confirm Withdraw</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal: Request Management (NEW) -->
+    <div id="modal-part-requests" class="modal-overlay">
+        <div class="modal-window" style="max-width: 950px; width: auto; min-width: 750px; max-width: 90vw;">
+            <div class="modal-header">
+                <div class="modal-title">
+                    <i class="fa-solid fa-list-check" style="color: var(--primary);"></i> 
+                    Manage Withdrawal Requests
+                </div>
+                <div class="modal-close" onclick="closeModal('modal-part-requests')">&times;</div>
+            </div>
+            <div class="modal-body">
+                <!-- Toolbar -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <div class="input-icon-wrap" style="width: 300px;">
+                        <i class="fa-solid fa-search"></i>
+                        <input type="text" class="form-control" placeholder="Search request..." onkeyup="filterRequests(this.value)">
+                    </div>
+                    <div style="font-size: 0.9rem; color: #64748b;">
+                        Waiting for approval: <strong id="pending-count-display" style="color: var(--warning);">0</strong>
+                    </div>
+                </div>
+
+                <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border);">
+                    <table style="margin-top: 0; width: 100%;">
+                        <thead>
+                            <tr style="background: #f8fafc;">
+                                <th style="padding-top: 1.2rem; padding-bottom: 1.2rem; white-space: nowrap;">Time</th>
+                                <th style="white-space: nowrap;">Part Name</th>
+                                <th style="text-align: center; white-space: nowrap;">Qty</th>
+                                <th style="white-space: nowrap;">Requester</th>
+                                <th style="text-align: center; white-space: nowrap;">Station</th>
+                                <th style="text-align: center; white-space: nowrap;">Status</th>
+                                <th style="text-align:right; white-space: nowrap;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="request-table-body">
+                            <tr><td colspan="7" style="text-align:center; padding:3rem; color:#9ca3af;">
+                                <i class="fa-solid fa-inbox fa-2x" style="margin-bottom: 10px; opacity: 0.5;"></i><br>
+                                No pending requests found
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW Modal: Add/Edit Part (Unified with Image Upload) -->
+    <div id="modal-part-form" class="modal-overlay" style="z-index: 1060;">
+        <div class="modal-window" style="max-width: 600px; height: auto;">
+            <div class="modal-header">
+                <div class="modal-title" id="part-form-title"><i class="fa-solid fa-box text-primary"></i> Add/Edit Spare Part</div>
+                <div class="modal-close" onclick="closeModal('modal-part-form')">&times;</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="part-mode">
+                <input type="hidden" id="orig-p-no"> <!-- Hidden field to store original Part No. -->
+                
+                <!-- Image Upload Section -->
+                <div class="form-group" style="text-align: center; margin-bottom: 1.5rem;">
+                    <label class="upload-area" for="p-image-file">
+                        <i class="fa-regular fa-image fa-2x" style="color: #94a3b8; margin-bottom: 10px; display:block;"></i>
+                        <span style="font-size: 0.9rem; color: #64748b;">Click to upload image</span>
+                        <input type="file" id="p-image-file" accept="image/*" style="display: none;" onchange="handleImageUpload(this)">
+                    </label>
+                    <img id="preview-img" src="" class="upload-preview" alt="Preview">
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Part Name</label>
+                        <input type="text" id="p-name" class="form-control" placeholder="e.g. Splicer Electrode">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Part No.</label>
+                        <input type="text" id="p-no" class="form-control" placeholder="e.g. S001-A">
+                    </div>
+                </div>
+                
+                <!-- NEW: Supplier Field -->
+                 <div class="form-group">
+                    <label class="form-label">Supplier</label>
+                    <input type="text" id="p-supplier" class="form-control" placeholder="e.g. ADVANTEK">
+                </div>
+
+                <div class="grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Initial Qty</label>
+                        <input type="number" id="p-qty" class="form-control" min="0" value="0">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Min Level</label>
+                        <input type="number" id="p-min" class="form-control" min="0" value="5">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Location</label>
+                        <input type="text" id="p-loc" class="form-control" placeholder="e.g. A-01">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Editor ID (EN)</label>
+                        <input type="text" id="p-en" class="form-control" placeholder="Employee ID">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Editor Name</label>
+                        <input type="text" id="p-user" class="form-control" placeholder="Your Name">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="savePartForm()">
+                    <i class="fa-solid fa-save"></i> Save Part
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- NEW Modal: Purchase Request (Order Part) -->
+    <div id="modal-purchase-request" class="modal-overlay" style="z-index: 1060;">
+        <div class="modal-window" style="max-width: 500px; height: auto;">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fa-solid fa-cart-shopping text-primary"></i> Create Purchase Order</div>
+                <div class="modal-close" onclick="closeModal('modal-purchase-request')">&times;</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">Select Part</label>
+                    <select id="po-part-select" class="form-control">
+                        <!-- Populated by JS -->
+                    </select>
+                </div>
+
+                <!-- NEW: Requester Info -->
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Employee ID (EN)</label>
+                        <input type="text" id="po-en" class="form-control" placeholder="รหัสพนักงาน">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Requester Name</label>
+                        <input type="text" id="po-name" class="form-control" placeholder="ชื่อผู้ขอซื้อ">
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Order Qty</label>
+                        <input type="number" id="po-qty" class="form-control" min="1" value="10">
+                    </div>
+                    <div class="form-group">
+                         <label class="form-label">Urgency</label>
+                         <select id="po-urgency" class="form-control">
+                             <option value="Normal">Normal (ปกติ)</option>
+                             <option value="Urgent">Urgent (ด่วน)</option>
+                             <option value="Critical">Critical (ด่วนที่สุด)</option>
+                         </select>
+                    </div>
+                </div>
+
+                <!-- NEW: Purchase Reason -->
+                <div class="form-group">
+                    <label class="form-label">Purchase Reason (เหตุผลการสั่งซื้อ)</label>
+                    <select id="po-reason" class="form-control">
+                        <option value="Low Stock">ของใกล้หมด (Low Stock)</option>
+                        <option value="Out of Stock">ของหมด (Out of Stock)</option>
+                        <option value="New Project">โปรเจกต์ใหม่ (New Project)</option>
+                        <option value="Spare">สำรองเผื่อฉุกเฉิน (Emergency Spare)</option>
+                        <option value="Other">อื่นๆ (Other)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Supplier (Optional)</label>
+                    <input type="text" id="po-supplier" class="form-control" placeholder="Vendor Name">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Remark</label>
+                    <textarea id="po-remark" class="form-control" rows="2" placeholder="รายละเอียดเพิ่มเติม..."></textarea>
+                </div>
+                <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="savePurchaseOrder()">Submit Order</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW Modal: Purchase Tracking -->
+    <div id="modal-purchase-tracking" class="modal-overlay">
+        <div class="modal-window" style="max-width: 1100px;">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fa-solid fa-truck-fast text-primary"></i> Track Purchase Orders</div>
+                <div class="modal-close" onclick="closeModal('modal-purchase-tracking')">&times;</div>
+            </div>
+            <div class="modal-body">
+                 <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border);">
+                    <table style="margin-top: 0; width: 100%;">
+                        <thead>
+                            <tr style="background: #f8fafc;">
+                                <th>Date</th>
+                                <th>Order ID</th>
+                                <th>Part Name</th>
+                                <th style="text-align: center;">Qty</th>
+                                <th>Requester / Reason</th> <!-- Updated Header -->
+                                <th>Supplier</th>
+                                <th style="text-align: center;">Status</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="purchase-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: User Management -->
+    <div id="modal-user" class="modal-overlay">
+        <div class="modal-window" style="max-width: 1000px;">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fa-solid fa-users"></i> User Management</div>
+                <div class="modal-close" onclick="closeModal('modal-user')">&times;</div>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; justify-content: flex-end; margin-bottom: 1.5rem;">
+                    <button class="btn btn-primary" onclick="openUserForm('create')">
+                        <i class="fa-solid fa-plus"></i> Add User
+                    </button>
+                    <button class="btn btn-action" style="margin-left: 10px;" onclick="resetUserData()"><i class="fa-solid fa-rotate-left"></i> Reset Demo</button>
+                </div>
+                <div class="card">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="text-align: center;">Avatar</th>
+                                <th>Name</th>
+                                <th>EN</th>
+                                <th style="text-align: center;">Role</th>
+                                <th style="text-align: center;">Status</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: User Form -->
+    <div id="modal-user-form" class="modal-overlay" style="z-index: 1050;">
+        <div class="modal-window" style="max-width: 400px; height: auto;">
+            <div class="modal-header">
+                <div class="modal-title" id="user-form-title">Add New User</div>
+                <div class="modal-close" onclick="closeModal('modal-user-form')">&times;</div>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="u-mode">
+                <div class="grid-2">
+                    <div class="form-group"><label class="form-label">Employee ID</label><input type="text" id="u-en" class="form-control"></div>
+                    <div class="form-group"><label class="form-label">Full Name</label><input type="text" id="u-name" class="form-control"></div>
+                </div>
+                <div class="grid-2">
+                    <div class="form-group"><label class="form-label">Position</label><input type="text" id="u-pos" class="form-control" placeholder="e.g. Engineer"></div>
+                    <div class="form-group">
+                         <label class="form-label">Role</label>
+                         <select id="u-role" class="form-control">
+                             <option value="Admin">Admin</option>
+                             <option value="Manager">Manager</option>
+                             <option value="Technician">Technician</option>
+                             <option value="Operator">Operator</option>
+                         </select>
+                    </div>
+                </div>
+                <div class="form-group"><label class="form-label">Status</label><select id="u-status" class="form-control"><option value="Active">Active</option><option value="Inactive">Inactive</option></select></div>
+                
+                <hr style="border:0; border-top:1px solid #eee; margin: 1rem 0;">
+                <div style="font-size:0.8rem; font-weight:bold; color:var(--text-muted); margin-bottom:0.5rem;">LOGIN CREDENTIALS</div>
+                <div class="form-group"><label class="form-label">Username</label><input type="text" id="u-username" class="form-control"></div>
+                <div class="form-group"><label class="form-label">Password</label><input type="text" id="u-password" class="form-control" placeholder="Enter password"></div>
+
+                <button class="btn btn-primary" style="width: 100%; margin-top: 10px;" onclick="saveUserForm()">Save User</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- NEW Modal: Report Issue (For Users) -->
+    <div id="modal-report-issue" class="modal-overlay">
+        <div class="modal-window" style="max-width: 500px; height: auto;">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fa-solid fa-circle-exclamation text-warning"></i> Report Issue / แจ้งปัญหา</div>
+                <div class="modal-close" onclick="closeModal('modal-report-issue')">&times;</div>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label class="form-label">หัวข้อปัญหา (Topic)</label>
+                    <select id="issue-topic" class="form-control">
+                        <option value="Login Issue">เข้าสู่ระบบไม่ได้ (Login Issue)</option>
+                        <option value="Bug/Error">เจอข้อผิดพลาด (Bug/Error)</option>
+                        <option value="Data Incorrect">ข้อมูลไม่ถูกต้อง (Data Incorrect)</option>
+                        <option value="Feature Request">ขอเพิ่มฟังก์ชัน (Feature Request)</option>
+                        <option value="Other">อื่นๆ (Other)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">รายละเอียด (Description)</label>
+                    <textarea id="issue-desc" class="form-control" rows="4" placeholder="ระบุรายละเอียดปัญหาที่พบ..."></textarea>
+                </div>
+                <button class="btn btn-primary" style="width: 100%;" onclick="submitSupportTicket()">ส่งแจ้งเตือนให้ Admin</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NEW Modal: Support Tickets (For Admin) -->
+    <div id="modal-support-tickets" class="modal-overlay">
+        <div class="modal-window" style="max-width: 800px;">
+            <div class="modal-header">
+                <div class="modal-title"><i class="fa-solid fa-headset text-primary"></i> Support Requests (รายการแจ้งปัญหา)</div>
+                <div class="modal-close" onclick="closeModal('modal-support-tickets')">&times;</div>
+            </div>
+            <div class="modal-body">
+                <div class="card" style="padding: 0; overflow: hidden; border: 1px solid var(--border);">
+                    <table style="margin-top: 0; width: 100%;">
+                        <thead>
+                            <tr style="background: #f8fafc;">
+                                <th>Time</th>
+                                <th>User</th>
+                                <th>Topic</th>
+                                <th>Description</th>
+                                <th style="text-align: center;">Status</th>
+                                <th style="text-align: right;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="support-table-body">
+                            <!-- JS Injected -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- DATA STATE (With LocalStorage Persistence) ---
+        const DEFAULT_IMG = "https://placehold.co/100x100?text=No+Image";
+        let targetPartNo = null; // Global variable for withdrawal target
+        let receiveNewImageBase64 = null; // Global variable for new receive image
+        let currentImageBase64 = null; // Global variable for edit part image
+
+        // Chart instances
+        let chartTopPartsInstance = null;
+        let chartStatusInstance = null;
+
+        const REAL_SPARE_PARTS = [
+            { name: "Fiber Holder-250", part_no: "1.0", qty: 0, min: 5, location: "Central Store", status: "Out of Stock", image: null, supplier: "ADVANTEK" },
+            { name: "Fiber Holder-400", part_no: "2.0", qty: 10, min: 5, location: "Central Store", status: "In Stock", image: null, supplier: "ADVANTEK" },
+            { name: "Fiber Holder-900", part_no: "4.0", qty: 8, min: 5, location: "Central Store", status: "In Stock", image: null, supplier: "ADVANTEK" },
+            { name: "Fiber Holder for 6 Ribbons", part_no: "5.0", qty: 6, min: 5, location: "Central Store", status: "In Stock", image: null, supplier: "SCP SYSTEMS" },
+            { name: "Electrode for Fitel Ribbon", part_no: "6.0", qty: 23, min: 10, location: "Central Store", status: "In Stock", image: null, supplier: "SCP SYSTEMS" },
+            { name: "Electrode for Fujikura Ribbon", part_no: "7.0", qty: 16, min: 10, location: "Central Store", status: "In Stock", image: null, supplier: "ADVANTEK" },
+            { name: "Blade Set Coating 125/250uM", part_no: "10.0", qty: 5, min: 5, location: "Central Store", status: "Low Stock", image: null, supplier: "DKSH" },
+            { name: "Centralizer Set 250uM", part_no: "11.0", qty: 5, min: 5, location: "Central Store", status: "Low Stock", image: null, supplier: "DKSH" },
+            { name: "Blade for SS110", part_no: "11.1", qty: 0, min: 2, location: "Central Store", status: "Out of Stock", image: null, supplier: "ADVANTEK" },
+            { name: "Replacement Blade S218R", part_no: "12.0", qty: 13, min: 5, location: "Central Store", status: "In Stock", image: null, supplier: "SCP SYSTEMS" },
+            { name: "Replacement Blade 125 um", part_no: "13.0", qty: 8, min: 5, location: "Central Store", status: "In Stock", image: null, supplier: "ADVANTEK" },
+            { name: "Blade for Cleaver CT-30/32", part_no: "14.0", qty: 2, min: 5, location: "Central Store", status: "Low Stock", image: null, supplier: "ADVANTEK" },
+            { name: "Blade for AFL Power Cleaver", part_no: "15.0", qty: 10, min: 5, location: "Central Store", status: "In Stock", image: null, supplier: "FIBER CENTER" },
+            { name: "Blade for CT110", part_no: "15.1", qty: 2, min: 5, location: "Central Store", status: "Low Stock", image: null, supplier: "ADVANTEK" }
+        ];
+
+        const DEFAULT_USERS = [
+            { en: "001", name: "Admin User", position: "System Admin", role: "Admin", username: "admin", password: "admin", status: "Active" },
+            { en: "002", name: "Manager User", position: "Stock Manager", role: "Manager", username: "manager", password: "1234", status: "Active" },
+            { en: "003", name: "Tech User", position: "Technician", role: "Technician", username: "tech", password: "1234", status: "Active" }
+        ];
+
+        // Load State with Array Checks
+        let state = {
+            users: JSON.parse(localStorage.getItem('users')) || DEFAULT_USERS,
+            parts: JSON.parse(localStorage.getItem('parts')) || [...REAL_SPARE_PARTS],
+            requests: JSON.parse(localStorage.getItem('requests')) || [],
+            po: JSON.parse(localStorage.getItem('po')) || [],
+            historyWD: JSON.parse(localStorage.getItem('historyWD')) || [],
+            historyED: JSON.parse(localStorage.getItem('historyED')) || [],
+            // NEW: Support Tickets
+            supportTickets: JSON.parse(localStorage.getItem('supportTickets')) || [
+                { id: 1, user: 'Manager User', topic: 'Cannot export CSV', desc: 'The export button is not responding when clicked.', status: 'Pending', time: new Date().toISOString() }
+            ],
+            currentUser: null
+        };
+        
+        let loginAttempts = 0; // Added: Track failed attempts
+
+        function saveData() {
+            try {
+                localStorage.setItem('users', JSON.stringify(state.users));
+                localStorage.setItem('parts', JSON.stringify(state.parts));
+                localStorage.setItem('requests', JSON.stringify(state.requests));
+                localStorage.setItem('po', JSON.stringify(state.po));
+                localStorage.setItem('historyWD', JSON.stringify(state.historyWD));
+                localStorage.setItem('historyED', JSON.stringify(state.historyED));
+                localStorage.setItem('supportTickets', JSON.stringify(state.supportTickets)); // Save Tickets
+            } catch (e) {
+                if (e.name === 'QuotaExceededError') {
+                    alert('Storage Full! Unable to save more data (likely due to large images). Please delete some items or use smaller images.');
+                }
+            }
+        }
+
+        // --- AUTH & INIT ---
+        function checkAuth() {
+            const session = sessionStorage.getItem('currentUser');
+            if (session) {
+                try {
+                    state.currentUser = JSON.parse(session);
+                    const validUser = state.users.find(u => u.username === state.currentUser.username && u.status === 'Active');
+                    if (validUser) {
+                        state.currentUser = validUser;
+                        initSystem();
+                    } else {
+                        logout();
+                    }
+                } catch(e) {
+                    document.getElementById('login-screen').style.display = 'flex';
+                }
+            } else {
+                document.getElementById('login-screen').style.display = 'flex';
+            }
+        }
+        
+        function performLogin() {
+            const u = document.getElementById('login-user').value.trim();
+            const p = document.getElementById('login-pass').value.trim();
+            const user = state.users.find(x => x.username === u && x.password === p && x.status === 'Active');
+            
+            if (user) {
+                loginAttempts = 0; // Reset attempts on success
+                document.getElementById('login-lock-msg').style.display = 'none';
+                document.getElementById('login-error-msg').style.display = 'none';
+                
+                state.currentUser = user;
+                sessionStorage.setItem('currentUser', JSON.stringify(user));
+                document.getElementById('login-screen').style.display = 'none';
+                initSystem();
+            } else {
+                loginAttempts++;
+                document.getElementById('login-error-msg').style.display = 'block';
+                document.getElementById('login-lock-msg').style.display = 'none';
+                
+                // Check if failed 3 times
+                if (loginAttempts >= 3) {
+                    document.getElementById('login-error-msg').style.display = 'none';
+                    document.getElementById('login-lock-msg').style.display = 'block';
+                }
+            }
+        }
+        
+        function requestPasswordReset() {
+            const u = document.getElementById('login-user').value.trim();
+            if(!u) return alert("กรุณาระบุ Username ก่อนขอรีเซ็ต");
+            
+            // Create a Support Ticket automatically
+            const ticket = {
+                id: Date.now(),
+                user: u, // User who cannot login
+                topic: "Password Reset Request",
+                desc: "User requested password reset due to locked account (too many failed attempts).",
+                status: 'Pending',
+                time: new Date().toISOString()
+            };
+
+            state.supportTickets.unshift(ticket);
+            saveData();
+            
+            // Notify user
+            alert(`ระบบได้ส่งคำขอรีเซ็ตรหัสผ่านสำหรับ User: "${u}" ไปยังผู้ดูแลระบบแล้ว\n\nกรุณารอการดำเนินการจาก Admin`);
+        }
+        
+        function logout() {
+            sessionStorage.removeItem('currentUser');
+            location.reload();
+        }
+
+        function initSystem() {
+            try {
+                updateProfileUI();
+                updatePermissions();
+                renderSparePartTable();
+                populateReceiveSearch(); // Init search list for receive
+                updateSupportBadge(); // Update Badge
+                
+                // Add click listener to close modals
+                document.querySelectorAll('.modal-overlay').forEach(overlay => {
+                    overlay.addEventListener('click', (e) => {
+                        if (e.target === overlay) {
+                            closeModal(overlay.id);
+                        }
+                    });
+                });
+            } catch(e) {
+                console.error("Init Error:", e);
+            }
+        }
+
+        function updateProfileUI() {
+            if(!state.currentUser) return;
+            const nameEl = document.getElementById('display-name');
+            if(nameEl) nameEl.innerText = state.currentUser.name;
+            const roleEl = document.getElementById('display-role');
+            if(roleEl) roleEl.innerText = `${state.currentUser.position} (${state.currentUser.role})`;
+            const avatarEl = document.getElementById('user-avatar');
+            if(avatarEl && state.currentUser.name) avatarEl.innerText = state.currentUser.name.charAt(0).toUpperCase();
+        }
+
+        function updatePermissions() {
+            document.querySelectorAll('.perm-admin, .perm-manager, .perm-tech').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'none');
+            
+            const role = state.currentUser.role;
+            if (role === 'Admin') {
+                document.querySelectorAll('.perm-admin, .perm-manager, .perm-tech').forEach(el => el.style.display = 'flex');
+                document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'inline-flex');
+            } else if (role === 'Manager') {
+                document.querySelectorAll('.perm-manager, .perm-tech').forEach(el => el.style.display = 'flex');
+                document.querySelectorAll('.manager-only').forEach(el => el.style.display = 'inline-flex');
+            } else if (role === 'Technician') {
+                document.querySelectorAll('.perm-tech').forEach(el => el.style.display = 'flex');
+            }
+        }
+
+        // --- UI ---
+        function switchTab(id, el) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            const target = document.getElementById(id);
+            if(target) {
+                target.classList.add('active');
+                if(id === 'receive-section') {
+                    // Refresh Receiver Name when switching to Receive Tab
+                    if(state.currentUser) {
+                        document.getElementById('rc-user').value = state.currentUser.name;
+                        document.getElementById('rc-new-receiver').value = state.currentUser.name;
+                    }
+                    populateReceiveSearch();
+                }
+                if(id === 'reports-section') {
+                    renderReportsDashboard();
+                }
+            }
+            if(el) el.classList.add('active');
+        }
+        
+        // --- HELPER TO RELOAD DATA (For Refresh Button) ---
+        async function handleRefresh() {
+             await fetchData();
+             renderReportsDashboard();
+             alert('Data Refreshed');
+        }
+
+        async function fetchData() {
+            try {
+                // Try loading from LocalStorage first to ensure freshness
+                const storedUsers = localStorage.getItem('users');
+                const storedParts = localStorage.getItem('parts');
+                const storedRequests = localStorage.getItem('requests');
+                const storedPO = localStorage.getItem('po');
+                const storedHistoryWD = localStorage.getItem('historyWD');
+                const storedHistoryED = localStorage.getItem('historyED');
+                const storedSupport = localStorage.getItem('supportTickets');
+
+                if (storedUsers) state.users = JSON.parse(storedUsers);
+                if (storedParts) state.parts = JSON.parse(storedParts);
+                if (storedRequests) state.requests = JSON.parse(storedRequests);
+                if (storedPO) state.po = JSON.parse(storedPO);
+                if (storedHistoryWD) state.historyWD = JSON.parse(storedHistoryWD);
+                if (storedHistoryED) state.historyED = JSON.parse(storedHistoryED);
+                if (storedSupport) state.supportTickets = JSON.parse(storedSupport);
+            } catch(e) { 
+                console.warn("Using Memory State");
+            }
+        }
+
+        function openModal(id, fetchLogs = false) {
+            const modal = document.getElementById(id);
+            if(modal) {
+                modal.classList.add('open');
+                if(fetchLogs) {
+                    renderRequestHistoryTable();
+                    renderEditHistoryTable();
+                }
+                if(id === 'modal-user') renderUserTable();
+                if(id === 'modal-part-requests') renderRequests();
+                if(id === 'modal-support-tickets') renderSupportTickets(); // Render Support Tickets
+                
+                if(id === 'modal-purchase-request') {
+                    populatePartSelect();
+                    document.getElementById('po-en').value = '';
+                    document.getElementById('po-name').value = '';
+                    document.getElementById('po-reason').selectedIndex = 0;
+                }
+                if(id === 'modal-purchase-tracking') renderPurchaseTable();
+                
+                // Initialize specific modals and clear stale data
+                if(id === 'modal-receive-existing') {
+                    populateReceiveSearch();
+                    if(state.currentUser) document.getElementById('rc-user').value = state.currentUser.name;
+                    // Clear previous search and values
+                    document.getElementById('rc-search').value = '';
+                    document.getElementById('rc-qty').value = 1;
+                    document.getElementById('rc-remark').value = '';
+                    document.getElementById('rc-part-info').style.display = 'none';
+                    document.getElementById('rc-empty-state').style.display = 'flex';
+                }
+                if(id === 'modal-receive-new') {
+                    if(state.currentUser) document.getElementById('rc-new-receiver').value = state.currentUser.name;
+                    // Clear previous inputs
+                    ['rc-new-no', 'rc-new-name', 'rc-new-loc', 'rc-new-supplier'].forEach(x => document.getElementById(x).value = '');
+                    document.getElementById('rc-new-qty').value = 1;
+                    receiveNewImageBase64 = null;
+                    document.getElementById('rc-new-preview').style.display = 'none';
+                    document.getElementById('rc-new-preview').src = "";
+                    document.getElementById('rc-new-image').value = ""; // Clear file input
+                }
+                // Clear report issue form
+                if(id === 'modal-report-issue') {
+                    document.getElementById('issue-topic').selectedIndex = 0;
+                    document.getElementById('issue-desc').value = '';
+                }
+            }
+        }
+
+        function closeModal(id) {
+            const el = document.getElementById(id);
+            if(el) el.classList.remove('open');
+        }
+        
+        // --- HISTORY FILTER FUNCTION ---
+        function filterHistoryTable(tbodyId, val) {
+            const filter = val.toLowerCase();
+            const rows = document.getElementById(tbodyId).getElementsByTagName('tr');
+            for (let i = 0; i < rows.length; i++) {
+                let text = rows[i].textContent || rows[i].innerText;
+                rows[i].style.display = text.toLowerCase().indexOf(filter) > -1 ? "" : "none";
+            }
+        }
+
+        // --- SUPPORT TICKET LOGIC (NEW) ---
+        function submitSupportTicket() {
+            const topic = document.getElementById('issue-topic').value;
+            const desc = document.getElementById('issue-desc').value.trim();
+            if(!desc) return alert("กรุณาระบุรายละเอียดปัญหา");
+
+            const ticket = {
+                id: Date.now(),
+                user: state.currentUser ? state.currentUser.name : "Guest",
+                topic: topic,
+                desc: desc,
+                status: 'Pending',
+                time: new Date().toISOString()
+            };
+
+            state.supportTickets.unshift(ticket);
+            saveData();
+            updateSupportBadge();
+            closeModal('modal-report-issue');
+            alert("แจ้งปัญหาเรียบร้อยแล้ว ทีมงานจะรีบดำเนินการตรวจสอบ");
+        }
+
+        function renderSupportTickets() {
+            const tbody = document.getElementById('support-table-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            if (state.supportTickets.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:#9ca3af;">No pending requests</td></tr>';
+                return;
+            }
+
+            state.supportTickets.forEach(t => {
+                const time = new Date(t.time).toLocaleString('th-TH');
+                let act = '';
+                if(t.status === 'Pending') {
+                    act = `<button class="btn btn-success btn-sm" onclick="resolveTicket(${t.id})">Mark Resolved</button>`;
+                }
+                
+                const statusBadge = t.status === 'Pending' ? 'bg-yellow' : 'bg-green';
+
+                tbody.innerHTML += `<tr>
+                    <td style="font-size:0.85rem; color:#64748b;">${time}</td>
+                    <td>${t.user}</td>
+                    <td style="font-weight:600;">${t.topic}</td>
+                    <td>${t.desc}</td>
+                    <td style="text-align:center;"><span class="badge ${statusBadge}">${t.status}</span></td>
+                    <td style="text-align:right;">${act}</td>
+                </tr>`;
+            });
+        }
+
+        function resolveTicket(id) {
+            const ticket = state.supportTickets.find(t => t.id === id);
+            if(ticket) {
+                if(confirm("ยืนยันว่าปัญหานี้ได้รับการแก้ไขแล้ว?")) {
+                    ticket.status = 'Resolved';
+                    saveData();
+                    renderSupportTickets();
+                    updateSupportBadge();
+                }
+            }
+        }
+
+        function updateSupportBadge() {
+            const pendingCount = state.supportTickets.filter(t => t.status === 'Pending').length;
+            const badge = document.getElementById('badge-support-count');
+            if(badge) {
+                if(pendingCount > 0) {
+                    badge.style.display = 'inline-block';
+                    badge.innerText = pendingCount;
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+        }
+
+        // --- SPARE PART ---
+        function renderSparePartTable(filter='') {
+            const tbody = document.getElementById('sparepart-table-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            const reqCount = state.requests.filter(r => r.status === 'Pending').length;
+            
+            // KPI elements
+            const totalEl = document.getElementById('sp-total-items');
+            if(totalEl) totalEl.innerText = state.parts.length;
+            
+            const lowItems = state.parts.filter(p => p.qty <= p.min && p.qty > 0);
+            const lowEl = document.getElementById('sp-low-stock');
+            if(lowEl) lowEl.innerText = lowItems.length;
+
+            const outItems = state.parts.filter(p => p.qty === 0);
+            const outEl = document.getElementById('sp-out-of-stock');
+            if(outEl) outEl.innerText = outItems.length;
+            
+            const reqEl = document.getElementById('sp-requests-count');
+            if(reqEl) reqEl.innerText = reqCount;
+            
+            // Badges
+            const badge = document.getElementById('badge-req-count');
+            if(badge) {
+                badge.style.display = reqCount > 0 ? 'flex' : 'none';
+                badge.innerText = reqCount;
+            }
+            
+            const navBadge = document.getElementById('nav-badge-req');
+            if(navBadge) {
+                 if(reqCount > 0) { navBadge.style.display = 'inline-block'; navBadge.innerText = reqCount; }
+                 else { navBadge.style.display = 'none'; }
+            }
+
+            // Filtering Logic - FIXED: Defined arrays before usage
+            let partsToShow = state.parts;
+            const filterLower = filter.toLowerCase();
+
+            // Defined derived lists for filtering
+            const lowStockItems = state.parts.filter(p => p.qty <= p.min && p.qty > 0);
+            const outOfStockItems = state.parts.filter(p => p.qty === 0);
+
+            if (filter === 'low_stock_filter') {
+                partsToShow = lowStockItems;
+                const searchBox = document.querySelector('input[placeholder="Search Part Name or No..."]');
+                if(searchBox) searchBox.value = '';
+            } else if (filter === 'out_of_stock_filter') {
+                partsToShow = outOfStockItems;
+                const searchBox = document.querySelector('input[placeholder="Search Part Name or No..."]');
+                if(searchBox) searchBox.value = '';
+            } else if (filter === 'show_all_items') {
+                partsToShow = state.parts;
+                const searchBox = document.querySelector('input[placeholder="Search Part Name or No..."]');
+                if(searchBox) searchBox.value = '';
+            } else {
+                partsToShow = state.parts.filter(part => 
+                    part.name.toLowerCase().includes(filterLower) || 
+                    part.part_no.toLowerCase().includes(filterLower)
+                );
+            }
+
+            partsToShow.forEach(part => {
+                let st = 'bg-green', txt='In Stock';
+                if(part.qty === 0) { st='bg-red'; txt='Out of Stock'; }
+                else if(part.qty <= part.min) { st='bg-yellow'; txt='Low Stock'; }
+                
+                let act = (state.currentUser && (state.currentUser.role === 'Admin' || state.currentUser.role === 'Manager')) ? 
+                    `<button class="btn btn-action" style="padding: 2px 8px; font-size: 0.8rem; margin-right:5px;" onclick="openPartForm('edit', '${part.part_no}')">Edit</button>` : '';
+                const location = part.location || "Central Store";
+                const imgSrc = part.image || DEFAULT_IMG;
+
+                const row = `<tr>
+                    <td style="text-align:center;"><img src="${imgSrc}" class="part-img-thumb"></td>
+                    <td class="text-bold">${part.name}</td>
+                    <td style="color:#6b7280; font-family:monospace;">${part.part_no}</td>
+                    <td style="text-align: center;">${part.qty.toLocaleString()}</td>
+                    <td style="text-align: center;"><span class="badge bg-gray">${location}</span></td>
+                    <td style="text-align: center;"><span class="badge ${st}">${txt}</span></td>
+                    <td style="text-align:right;">${act}<button class="btn btn-action withdraw" style="padding: 2px 8px; font-size: 0.8rem; color: #d97706; border-color: #fcd34d;" onclick="openWithdrawModal('${part.part_no}')">Withdraw</button></td>
+                </tr>`;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+        
+        function filterParts(val) { renderSparePartTable(val); }
+
+        // --- RECEIVE STOCK FUNCTIONS ---
+        function populateReceiveSearch() {
+            const dl = document.getElementById('rc-part-list');
+            if(!dl) return;
+            dl.innerHTML = '';
+            state.parts.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.part_no;
+                opt.label = p.name;
+                dl.appendChild(opt);
+            });
+        }
+
+        function onSelectReceivePart(val) {
+            // Updated to be case-insensitive search
+            const valLower = val.toLowerCase();
+            const part = state.parts.find(p => p.part_no.toLowerCase() === valLower || p.name.toLowerCase() === valLower);
+            const emptyState = document.getElementById('rc-empty-state');
+            const infoDiv = document.getElementById('rc-part-info');
+            
+            if(part) {
+                emptyState.style.display = 'none';
+                document.getElementById('rc-info-name').innerText = part.name;
+                document.getElementById('rc-info-no').innerText = part.part_no;
+                document.getElementById('rc-info-qty').innerText = part.qty;
+                document.getElementById('rc-info-img').src = part.image || DEFAULT_IMG;
+                infoDiv.style.display = 'block';
+            } else {
+                emptyState.style.display = 'flex';
+                infoDiv.style.display = 'none';
+            }
+        }
+
+        function confirmReceiveExisting() {
+            const searchVal = document.getElementById('rc-search').value;
+            const qty = parseInt(document.getElementById('rc-qty').value);
+            const remark = document.getElementById('rc-remark').value;
+            
+            // Updated search logic
+            const searchValLower = searchVal.toLowerCase();
+            const part = state.parts.find(p => p.part_no.toLowerCase() === searchValLower || p.name.toLowerCase() === searchValLower);
+            
+            if(!part) return alert("Part not found. Please select from list.");
+            if(isNaN(qty) || qty <= 0) return alert("Invalid quantity.");
+
+            if(confirm(`Confirm receive ${qty} units for ${part.name}?`)) {
+                part.qty += qty;
+                if(part.qty > part.min) {
+                    part.status = "In Stock"; 
+                } else if (part.qty > 0) {
+                    part.status = "Low Stock";
+                }
+                
+                // Log history
+                state.historyED.unshift({
+                    time: new Date().toISOString(),
+                    part_no: part.part_no, part_name: part.name,
+                    changes: `Received Existing: +${qty} (${remark})`,
+                    editor: state.currentUser.name
+                });
+                
+                saveData();
+                renderSparePartTable();
+                
+                // Reset form
+                document.getElementById('rc-search').value = '';
+                document.getElementById('rc-qty').value = 1;
+                document.getElementById('rc-remark').value = '';
+                document.getElementById('rc-part-info').style.display = 'none';
+                document.getElementById('rc-empty-state').style.display = 'flex'; 
+                
+                closeModal('modal-receive-existing');
+                alert("Stock Updated Successfully!");
+            }
+        }
+
+        function handleReceiveNewImage(input) {
+            if (input.files && input.files[0]) {
+                // BUG FIX: Check file size (Limit 500KB)
+                if (input.files[0].size > 500000) {
+                     alert("File is too large! Please select an image under 500KB.");
+                     input.value = "";
+                     return;
+                }
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    receiveNewImageBase64 = e.target.result;
+                    const preview = document.getElementById('rc-new-preview');
+                    preview.src = receiveNewImageBase64;
+                    preview.style.display = 'inline-block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function confirmReceiveNew() {
+            const no = document.getElementById('rc-new-no').value.trim();
+            const name = document.getElementById('rc-new-name').value.trim();
+            const qty = parseInt(document.getElementById('rc-new-qty').value);
+            const min = parseInt(document.getElementById('rc-new-min').value);
+            const loc = document.getElementById('rc-new-loc').value.trim();
+            const supplier = document.getElementById('rc-new-supplier').value.trim();
+            
+            if(!no || !name) return alert("Part No and Name are required.");
+            if(state.parts.find(p => p.part_no === no)) return alert("Part No already exists!");
+            if(isNaN(qty) || qty < 0) return alert("Invalid Initial Qty");
+
+            let status = "In Stock";
+            if (qty === 0) status = "Out of Stock";
+            else if (qty <= min) status = "Low Stock";
+
+            const newPart = {
+                part_no: no, name: name, qty: qty, min: min, location: loc,
+                supplier: supplier, status: status, image: receiveNewImageBase64
+            };
+
+            state.parts.push(newPart);
+            
+            // Log history
+            state.historyED.unshift({
+                time: new Date().toISOString(),
+                part_no: no, part_name: name,
+                changes: `Received NEW Item (Initial: ${qty})`,
+                editor: state.currentUser.name
+            });
+
+            saveData();
+            renderSparePartTable();
+            
+            closeModal('modal-receive-new');
+            alert("New Item Added Successfully!");
+        }
+
+        // --- PART FORM (Add/Edit) ---
+        function handleImageUpload(input) {
+            if (input.files && input.files[0]) {
+                // BUG FIX: Check file size (Limit 500KB)
+                if (input.files[0].size > 500000) {
+                     alert("File is too large! Please select an image under 500KB.");
+                     input.value = "";
+                     return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentImageBase64 = e.target.result;
+                    const preview = document.getElementById('preview-img');
+                    preview.src = currentImageBase64;
+                    preview.style.display = 'inline-block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function openPartForm(mode, id) {
+            document.getElementById('part-mode').value = mode;
+            ['p-no','p-name','p-qty','p-min','p-loc','p-supplier'].forEach(i => {
+                const el = document.getElementById(i);
+                if(el) el.value = '';
+            });
+            document.getElementById('p-image-file').value = ""; 
+            const preview = document.getElementById('preview-img');
+
+            if(state.currentUser) {
+                const enEl = document.getElementById('p-en');
+                const userEl = document.getElementById('p-user');
+                if(enEl) enEl.value = state.currentUser.en || '';
+                if(userEl) userEl.value = state.currentUser.name || '';
+            } else {
+                document.getElementById('p-en').value = '';
+                document.getElementById('p-user').value = '';
+            }
+            
+            if(mode === 'edit') {
+                const p = state.parts.find(x => x.part_no === id);
+                if(!p) return alert("Part not found!"); 
+
+                document.getElementById('part-form-title').innerText = "แก้ไขอะไหล่ (Edit Part)";
+                document.getElementById('orig-p-no').value = p.part_no; 
+                document.getElementById('p-no').value = p.part_no;
+                
+                document.getElementById('p-name').value = p.name;
+                document.getElementById('p-qty').value = p.qty;
+                document.getElementById('p-min').value = p.min;
+                document.getElementById('p-loc').value = p.location;
+                if(document.getElementById('p-supplier')) document.getElementById('p-supplier').value = p.supplier || '';
+                
+                currentImageBase64 = p.image;
+                if(p.image) {
+                    preview.src = p.image;
+                    preview.style.display = 'inline-block';
+                } else {
+                    preview.style.display = 'none';
+                    preview.src = "";
+                }
+
+            } else {
+                document.getElementById('part-form-title').innerText = "เพิ่มอะไหล่ใหม่ (Add New Part)";
+                document.getElementById('orig-p-no').value = "";
+                currentImageBase64 = null;
+                preview.style.display = 'none';
+                preview.src = "";
+            }
+            openModal('modal-part-form');
+        }
+
+        function savePartForm() {
+            try {
+                const mode = document.getElementById('part-mode').value;
+                const no = document.getElementById('p-no').value.trim();
+                const origNo = document.getElementById('orig-p-no').value;
+                const name = document.getElementById('p-name').value.trim();
+                const qtyVal = document.getElementById('p-qty').value;
+                const minVal = document.getElementById('p-min').value;
+                const loc = document.getElementById('p-loc').value.trim();
+                const supplier = document.getElementById('p-supplier') ? document.getElementById('p-supplier').value.trim() : '';
+                const en = document.getElementById('p-en').value.trim();
+                const user = document.getElementById('p-user').value.trim();
+
+                if(!no || !name) return alert("Part No. and Name are required!");
+                if(!qtyVal || !minVal) return alert("Qty and Min Level are required.");
+                
+                const qty = parseInt(qtyVal);
+                const min = parseInt(minVal);
+                
+                if(isNaN(qty) || isNaN(min)) return alert("Qty and Min Level must be valid numbers.");
+                if(qty < 0 || min < 0) return alert("Qty and Min Level cannot be negative.");
+
+                let status = "In Stock";
+                if (qty === 0) status = "Out of Stock";
+                else if (qty <= min) status = "Low Stock";
+
+                const p = {
+                    part_no: no, name: name, qty: qty, min: min, location: loc,
+                    supplier: supplier, status: status, image: currentImageBase64 
+                };
+
+                const editorName = user || (state.currentUser ? state.currentUser.name : "Unknown");
+
+                if(mode === 'create') {
+                    if(state.parts.find(x => x.part_no === no)) return alert("Part Number already exists!");
+                    state.parts.push(p);
+                    state.historyED.unshift({
+                        time: new Date().toISOString(),
+                        part_no: no, part_name: name,
+                        changes: 'Created new part',
+                        editor: editorName
+                    });
+                } else {
+                    const idx = state.parts.findIndex(x => x.part_no === origNo);
+                    if(idx === -1) return alert("Error: Original Part not found.");
+                    
+                    if(no !== origNo && state.parts.find(x => x.part_no === no)) {
+                        return alert("New Part Number already exists!");
+                    }
+
+                    const oldP = state.parts[idx];
+                    let changes = [];
+                    if(oldP.part_no !== no) changes.push(`PN: ${oldP.part_no} -> ${no}`);
+                    if(oldP.qty !== qty) changes.push(`Qty: ${oldP.qty} -> ${qty}`);
+                    if(oldP.min !== min) changes.push(`Min: ${oldP.min} -> ${min}`);
+                    if(oldP.location !== loc) changes.push(`Loc: ${oldP.location} -> ${loc}`);
+                    if((oldP.supplier || '') !== supplier) changes.push(`Supplier: ${oldP.supplier || '-'} -> ${supplier}`);
+                    if(oldP.name !== name) changes.push(`Name changed`);
+                    if(oldP.image !== currentImageBase64) changes.push(`Image updated`);
+                    
+                    // Update ALL fields correctly
+                    state.parts[idx].part_no = no;
+                    state.parts[idx].name = name;
+                    state.parts[idx].qty = qty;
+                    state.parts[idx].min = min;
+                    state.parts[idx].location = loc;
+                    state.parts[idx].supplier = supplier;
+                    state.parts[idx].status = status;
+                    if(currentImageBase64) state.parts[idx].image = currentImageBase64;
+                    
+                    if(changes.length > 0) {
+                        state.historyED.unshift({
+                            time: new Date().toISOString(),
+                            part_no: no, part_name: name,
+                            changes: changes.join(", "),
+                            editor: editorName
+                        });
+                    }
+                }
+                saveData(); 
+                renderSparePartTable(); 
+                // Force update dashboard if it's active - using current state
+                if(document.getElementById('reports-section').classList.contains('active')) {
+                      renderReportsDashboard();
+                }
+                closeModal('modal-part-form');
+            } catch(e) {
+                console.error(e);
+                alert("Error saving part: " + e.message);
+            }
+        }
+
+        // --- Withdraw Logic ---
+        function openWithdrawModal(partNo) {
+            const part = state.parts.find(p => p.part_no === partNo);
+            if (!part) return;
+            
+            targetPartNo = partNo; // Set global variable
+            document.getElementById('wd-name').value = part.name;
+            document.getElementById('wd-current').value = part.qty;
+            document.getElementById('wd-qty').value = 1;
+            openModal('modal-withdraw');
+        }
+
+        function saveWithdraw() {
+            const qty = parseInt(document.getElementById('wd-qty').value);
+            const en = document.getElementById('wd-en').value.trim();
+            const user = document.getElementById('wd-user').value.trim();
+            const station = document.getElementById('wd-station').value.trim();
+            const machineSN = document.getElementById('wd-machine-sn').value.trim();
+            const reason = document.getElementById('wd-reason').value;
+            const remark = document.getElementById('wd-remark').value.trim();
+            
+            if (!en || !user || !station || !machineSN || !reason) { alert("กรุณากรอกข้อมูลให้ครบถ้วน"); return; }
+            if (qty <= 0) { alert("Invalid Quantity"); return; }
+            
+            const part = state.parts.find(p => p.part_no === targetPartNo);
+            if (part) {
+                if (qty > part.qty) { alert("Not enough stock!"); return; }
+                
+                state.requests.unshift({
+                    id: 'REQ-' + Date.now(),
+                    part_no: targetPartNo, part_name: part.name, qty: qty,
+                    requester: user, en: en, station: station, status: 'Pending', 
+                    timestamp: new Date().toISOString(),
+                    details: { machine_sn: machineSN, reason, remark }
+                });
+                
+                // Assuming immediate deduction for demo:
+                part.qty -= qty;
+                if(part.qty === 0) part.status = 'Out of Stock';
+                else if(part.qty <= part.min) part.status = 'Low Stock';
+
+                state.historyED.unshift({
+                    time: new Date().toISOString(),
+                    part_no: targetPartNo, part_name: part.name,
+                    changes: `Withdrawal Request (Pending): -${qty}`,
+                    editor: user
+                });
+                
+                saveData();
+                renderSparePartTable();
+                renderRequests(); // Refresh requests list
+                closeModal('modal-withdraw');
+                alert(`Request sent for ${part.name}`);
+            }
+        }
+
+        // --- REQUESTS ---
+        function renderRequests() {
+            const t = document.getElementById('request-table-body');
+            if(!t) return;
+            t.innerHTML = '';
+            const pending = state.requests.filter(r => r.status === 'Pending');
+            const countDisplay = document.getElementById('pending-count-display');
+            if(countDisplay) countDisplay.innerText = pending.length;
+            
+            if(pending.length === 0) { t.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:#9ca3af">No pending requests</td></tr>'; return; }
+            pending.forEach(r => {
+                const time = new Date(r.timestamp).toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'});
+                let btns = `<span style="font-size:0.8rem; color:#9ca3af;">Waiting</span>`;
+                if (state.currentUser && (state.currentUser.role === 'Manager' || state.currentUser.role === 'Admin')) {
+                    btns = `<button class="btn btn-success btn-sm" onclick="approveReq('${r.id}')">Approve</button> <button class="btn btn-danger btn-sm" onclick="rejectReq('${r.id}')">Reject</button>`;
+                }
+                const row = `<tr>
+                   <td>${time}</td><td>${r.part_name}</td><td style="text-align:center;"><span class="badge bg-gray">x${r.qty}</span></td>
+                   <td>${r.requester} <small class="text-muted">(${r.en})</small></td><td style="text-align:center">${r.station}</td><td style="text-align:center"><span class="badge bg-yellow">Pending</span></td>
+                   <td style="text-align:right;">${btns}</td>
+                </tr>`;
+                t.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        function approveReq(id) {
+            if(!confirm("Approve this request? Stock will be deducted.")) return;
+            const index = state.requests.findIndex(r => r.id === id);
+            if (index > -1) {
+                const req = state.requests[index];
+                const part = state.parts.find(p => p.part_no === req.part_no);
+                
+                req.status = 'Approved';
+                req.actionTime = new Date().toISOString();
+                req.actionBy = state.currentUser ? state.currentUser.name : "Unknown";
+                req.note = "";
+                
+                // Add to Request History
+                state.historyWD.unshift(req);
+                state.requests.splice(index, 1);
+
+                // Traceability Log
+                state.historyED.unshift({
+                    time: new Date().toISOString(),
+                    part_no: part.part_no, part_name: part.name,
+                    changes: `Withdrawal Approved (REQ: ${req.id})`,
+                    editor: state.currentUser.name
+                });
+                
+                saveData();
+                renderRequests();
+                renderSparePartTable();
+                renderRequestHistoryTable();
+            }
+        }
+
+        function rejectReq(id) {
+             const reason = prompt("Reason for rejection:");
+             if (reason === null) return;
+             
+             const index = state.requests.findIndex(r => r.id === id);
+             if (index > -1) {
+                 const req = state.requests[index];
+                 // Refund stock since it was deducted on request in this demo logic
+                 const part = state.parts.find(p => p.part_no === req.part_no);
+                 if(part) {
+                     part.qty += req.qty;
+                     if(part.qty > part.min) part.status = 'In Stock';
+                     else if(part.qty > 0) part.status = 'Low Stock';
+                 }
+
+                 req.status = 'Rejected';
+                 req.actionTime = new Date().toISOString();
+                 req.actionBy = state.currentUser ? state.currentUser.name : "Unknown";
+                 req.note = reason;
+                 
+                 state.historyWD.unshift(req);
+                 state.requests.splice(index, 1);
+                 
+                 state.historyED.unshift({
+                    time: new Date().toISOString(),
+                    part_no: part.part_no, part_name: part.name,
+                    changes: `Withdrawal Rejected (Refund +${req.qty})`,
+                    editor: state.currentUser.name
+                });
+
+                 saveData();
+                 renderRequests();
+                 renderSparePartTable();
+                 renderRequestHistoryTable();
+             }
+        }
+
+        // --- PO ---
+        function populatePartSelect() {
+            const s = document.getElementById('po-part-select');
+            if(!s) return;
+            s.innerHTML = '';
+            state.parts.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.part_no;
+                opt.text = `${p.name} (${p.part_no})`;
+                s.appendChild(opt);
+            });
+        }
+        function savePurchaseOrder() {
+            const s = document.getElementById('po-part-select');
+            if (!s.value) return alert("Please select a part."); 
+            
+            state.po.unshift({
+                id: 'PO-'+Date.now(), date: new Date().toISOString(), part_no: s.value, part_name: s.options[s.selectedIndex].text,
+                qty: document.getElementById('po-qty').value, status: 'Pending Approval', 
+                requester: document.getElementById('po-name').value, reason: document.getElementById('po-reason').value
+            });
+            saveData(); closeModal('modal-purchase-request'); alert('PO Created');
+        }
+        function renderPurchaseTable() {
+            const t = document.getElementById('purchase-table-body');
+            if(!t) return;
+            t.innerHTML = '';
+            state.po.forEach(p => {
+                // Bug Fix: Allow receiving partials. Only hide if fully Received.
+                let act = (state.currentUser.role === 'Manager' || state.currentUser.role === 'Admin') && p.status !== 'Received' ? 
+                `<button class="btn btn-primary btn-sm" onclick="receivePO('${p.id}')">Receive</button>` : '-';
+                
+                const formattedDate = new Date(p.date).toLocaleDateString('th-TH');
+                t.innerHTML += `<tr><td>${formattedDate}</td><td>${p.id}</td><td>${p.part_name}</td><td style="text-align:center">${p.qty}</td>
+                <td>${p.requester}<br><small class="text-muted">${p.reason}</small></td><td>-</td><td style="text-align:center"><span class="badge ${p.status.startsWith('Received')?'bg-green':'bg-yellow'}">${p.status}</span></td><td style="text-align:right">${act}</td></tr>`;
+            });
+        }
+        
+        function receivePO(id) {
+            const p = state.po.find(x => x.id === id);
+            if (!p) return;
+            
+            const inputVal = prompt(`Receive items for ${p.part_name}\n\nOrdered: ${p.qty}\nEnter received quantity:`, p.qty);
+            
+            if (inputVal === null) return; 
+            
+            const qtyReceived = parseInt(inputVal);
+            
+            if (isNaN(qtyReceived) || qtyReceived <= 0) {
+                alert("Please enter a valid number greater than 0.");
+                return;
+            }
+            
+            const confirmMsg = `⚠️ PLEASE CHECK CAREFULLY ⚠️\n\n` +
+                               `Part: ${p.part_name}\n` +
+                               `Ordered Qty: ${p.qty}\n` +
+                               `Receiving Qty: ${qtyReceived}\n\n` +
+                               `Stock will be increased by ${qtyReceived}.\n` +
+                               `Is this correct?`;
+                               
+            if (!confirm(confirmMsg)) return;
+
+            const part = state.parts.find(x => x.part_no === p.part_no);
+            if(part) {
+                 part.qty += qtyReceived;
+                 if(part.qty > part.min) part.status = 'In Stock';
+                 
+                 state.historyED.unshift({
+                    time: new Date().toISOString(),
+                    part_no: part.part_no, part_name: part.name,
+                    changes: `Received PO (${p.id}): +${qtyReceived} (Ordered: ${p.qty})`,
+                    editor: state.currentUser.name
+                 });
+            }
+            
+            if (qtyReceived !== parseInt(p.qty)) {
+                p.status = `Received (${qtyReceived}/${p.qty})`;
+            } else {
+                p.status = 'Received';
+            }
+            
+            saveData(); 
+            renderPurchaseTable(); 
+            renderSparePartTable();
+        }
+
+        // --- REPORTS ---
+        function renderReports() {
+            renderRequestHistoryTable();
+            renderEditHistoryTable();
+        }
+        
+        function renderReportsDashboard() {
+            // Clears Search
+            document.getElementById('search-wd-history').value = '';
+            document.getElementById('search-ed-history').value = '';
+
+            // Calculate Summary Data
+            const totalWd = state.historyWD.reduce((sum, item) => sum + item.qty, 0);
+            const pending = state.requests.filter(r => r.status === 'Pending').length;
+            
+            // Find Most Popular Part (Approved Only)
+            const partCounts = {};
+            state.historyWD.forEach(item => {
+                // Count only Approved withdrawals for accurate statistics
+                if(item.status === 'Approved') {
+                    partCounts[item.part_name] = (partCounts[item.part_name] || 0) + item.qty;
+                }
+            });
+            let popPart = "-", popQty = 0;
+            for (const [name, qty] of Object.entries(partCounts)) {
+                if (qty > popQty) { popQty = qty; popPart = name; }
+            }
+
+            // Update UI Cards
+            document.getElementById('rpt-total-wd').innerText = totalWd;
+            document.getElementById('rpt-pending').innerText = pending;
+            document.getElementById('rpt-pop-part').innerText = popPart;
+            document.getElementById('rpt-pop-qty').innerText = popQty + " units";
+
+            // Update Charts Safe
+            try {
+                if(typeof Chart !== 'undefined') {
+                    renderCharts(partCounts);
+                }
+            } catch (e) { console.error(e); }
+            
+            // Render Tables
+            renderRequestHistoryTable();
+            renderEditHistoryTable();
+        }
+
+        function renderCharts(partCounts) {
+            // Sort top 5 parts
+            const sortedParts = Object.entries(partCounts).sort((a,b) => b[1] - a[1]).slice(0, 5);
+            const labelsTop = sortedParts.map(x => x[0]);
+            const dataTop = sortedParts.map(x => x[1]);
+
+            // Status Distribution
+            const approved = state.historyWD.filter(x => x.status === 'Approved').length;
+            const rejected = state.historyWD.filter(x => x.status === 'Rejected').length;
+            const pendingCount = state.requests.filter(x => x.status === 'Pending').length;
+
+            // Destroy old charts if exist
+            if(chartTopPartsInstance) chartTopPartsInstance.destroy();
+            if(chartStatusInstance) chartStatusInstance.destroy();
+
+            // Create Bar Chart
+            const ctxTop = document.getElementById('chartTopParts').getContext('2d');
+            chartTopPartsInstance = new Chart(ctxTop, {
+                type: 'bar',
+                data: {
+                    labels: labelsTop,
+                    datasets: [{
+                        label: 'Withdrawal Qty',
+                        data: dataTop,
+                        backgroundColor: '#4f46e5',
+                        borderRadius: 5
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Create Doughnut Chart
+            const ctxStatus = document.getElementById('chartStatus').getContext('2d');
+            chartStatusInstance = new Chart(ctxStatus, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Approved', 'Rejected', 'Pending'],
+                    datasets: [{
+                        data: [approved, rejected, pendingCount],
+                        backgroundColor: ['#10b981', '#ef4444', '#f59e0b']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+        }
+        
+        function renderRequestHistoryTable() {
+            const tbody = document.getElementById('report-withdrawal-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            if (!state.historyWD || state.historyWD.length === 0) {
+                 tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:2rem; color:#9ca3af;">No history</td></tr>';
+                 return;
+            }
+            
+            state.historyWD.forEach(req => {
+                const time = new Date(req.actionTime).toLocaleString('th-TH');
+                let note = req.note ? `<div style="font-size:0.75rem; color:#ef4444;">Note: ${req.note}</div>` : '';
+                
+                const details = req.details || {};
+                const machineSN = details.machine_sn || '-';
+
+                tbody.innerHTML += `<tr>
+                    <td style="color:#64748b; font-size:0.85rem; white-space:nowrap;">${time}</td>
+                    <td style="font-weight:600;">${req.part_name}</td>
+                    <td style="text-align:center;">${req.qty}</td>
+                    <td>${req.requester} <span style="font-size:0.8rem; color:#9ca3af;">(${req.en})</span></td>
+                    <td>${req.station}</td>
+                    <td><span class="badge ${req.status === 'Approved' ? 'bg-green' : 'bg-red'}">${req.status}</span></td>
+                    <td>${req.actionBy} ${note}</td>
+                </tr>`;
+            });
+        }
+
+        function renderEditHistoryTable() {
+            const tbody = document.getElementById('report-edit-history-body');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+            
+            if (!state.historyED || state.historyED.length === 0) {
+                 tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem; color:#9ca3af;">No edit history found</td></tr>';
+                 return;
+            }
+            
+            state.historyED.forEach(log => {
+                const time = new Date(log.time).toLocaleString('th-TH');
+                const editorName = log.editor || "Unknown";
+                const editorInitial = editorName.charAt(0).toUpperCase();
+                
+                // Determine Type and Style
+                let typeHtml = '<span class="badge bg-gray">Update</span>';
+                const txt = (log.changes || '').toLowerCase(); // Ensure changes string exists
+                
+                if (txt.includes('created') || txt.includes('new item')) {
+                    typeHtml = '<span class="badge bg-blue"><i class="fa-solid fa-plus"></i> New Item</span>';
+                } else if (txt.includes('received') || (txt.includes('qty') && txt.includes('->') && isQtyIncrease(log.changes))) {
+                      typeHtml = '<span class="badge bg-green"><i class="fa-solid fa-arrow-down"></i> Stock In</span>';
+                } else if (txt.includes('withdrawal') || (txt.includes('qty') && txt.includes('->') && !isQtyIncrease(log.changes))) {
+                      typeHtml = '<span class="badge bg-red"><i class="fa-solid fa-arrow-up"></i> Stock Out</span>';
+                } else if (txt.includes('image')) {
+                      typeHtml = '<span class="badge bg-purple"><i class="fa-regular fa-image"></i> Image</span>';
+                } else {
+                      typeHtml = '<span class="badge bg-orange"><i class="fa-solid fa-pen"></i> Edit Info</span>';
+                }
+
+                // Formatting changes
+                let formattedChanges = formatChanges(log.changes || '');
+
+                const row = `<tr>
+                    <td style="color:#64748b; font-size:0.85rem;">${time}</td>
+                    <td>${typeHtml}</td>
+                    <td style="font-family:monospace; color:#334155;">${log.part_no}</td>
+                    <td style="font-weight:600; color:#1e293b;">${log.part_name}</td>
+                    <td style="font-size:0.9rem;">${formattedChanges}</td>
+                    <td>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <div class="avatar" style="width:28px; height:28px; font-size:0.75rem; background:#cbd5e1;">${editorInitial}</div> 
+                            <span style="font-size:0.9rem;">${editorName}</span>
+                        </div>
+                    </td>
+                </tr>`;
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+        }
+
+        function isQtyIncrease(changeStr) {
+            try {
+                if (!changeStr) return false;
+                const match = changeStr.match(/Qty:\s*(\d+)\s*->\s*(\d+)/);
+                if (match) {
+                    return parseInt(match[2]) > parseInt(match[1]);
+                }
+                // Handle "Received PO ... +10" format
+                if (changeStr.includes('+')) return true;
+            } catch(e) {}
+            return false;
+        }
+
+        function formatChanges(str) {
+            if(!str) return '-';
+            // Replace -> with arrow icon
+            let formatted = str.replace(/(\d+)\s*->\s*(\d+)/g, '<b class="text-muted">$1</b> <i class="fa-solid fa-arrow-right" style="font-size:0.7em; color:#94a3b8;"></i> <b>$2</b>');
+            // Highlight Keys e.g. "Name changed"
+            formatted = formatted.replace(/([a-zA-Z0-9 .]+):/g, '<span class="fw-600 text-dark">$1:</span>');
+            return formatted;
+        }
+        
+        // --- EXPORT CSV ---
+        function exportToCSV(tableId, filename) {
+            const table = document.getElementById(tableId);
+            if (!table) return;
+
+            let csv = [];
+            const headerRow = table.parentElement.querySelector('thead tr');
+            if (headerRow) {
+                const headers = Array.from(headerRow.querySelectorAll('th'))
+                    .map(th => th.innerText.replace(/,/g, ''));
+                csv.push(headers.join(","));
+            }
+
+            const rows = table.querySelectorAll('tr');
+            rows.forEach(row => {
+                const cols = row.querySelectorAll('td');
+                const rowData = Array.from(cols).map(td => {
+                    let text = td.innerText.replace(/(\r\n|\n|\r)/gm, " ").replace(/,/g, " ");
+                    // Remove HTML tags for CSV
+                    text = text.replace(/<[^>]*>/g, "");
+                    return text;
+                });
+                if (rowData.length > 0) csv.push(rowData.join(","));
+            });
+
+            if (csv.length === 0) {
+                alert("No data to export");
+                return;
+            }
+
+            const csvContent = "data:text/csv;charset=utf-8,\uFEFF" + csv.join("\n"); 
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `${filename}_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- USER MGMT ---
+        function renderUserTable() {
+            const t = document.getElementById('user-table-body'); 
+            if(!t) return;
+            t.innerHTML = '';
+            state.users.forEach(u => {
+                const statusClass = u.status === 'Active' ? 'bg-green' : 'bg-red';
+                t.innerHTML += `<tr>
+                    <td><div class="avatar">${u.name[0]}</div></td>
+                    <td>${u.name}</td>
+                    <td>${u.en}</td>
+                    <td style="text-align: center;"><span class="badge bg-blue">${u.role}</span></td>
+                    <td style="text-align: center;"><span class="badge ${statusClass}">${u.status}</span></td>
+                    <td style="text-align:right; white-space:nowrap;">
+                        <button class="btn btn-action btn-sm" onclick="openUserForm('edit', '${u.en}')" style="margin-right:5px;"><i class="fa-solid fa-pen"></i> Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="delUser('${u.en}')"><i class="fa-solid fa-trash"></i> Del</button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        function openUserForm(mode, en) {
+             document.getElementById('u-mode').value = mode;
+             // Clear inputs
+             ['u-en','u-name','u-pos','u-username','u-password'].forEach(i => document.getElementById(i).value='');
+             const enInput = document.getElementById('u-en');
+             
+             if(mode === 'edit') {
+                 const u = state.users.find(x => x.en === en);
+                 if(!u) return;
+                 
+                 document.getElementById('user-form-title').innerText = "Edit User";
+                 
+                 // Fill fields
+                 enInput.value = u.en;
+                 enInput.readOnly = true; // Lock ID
+                 enInput.style.backgroundColor = "#f1f5f9";
+                 
+                 document.getElementById('u-name').value = u.name;
+                 document.getElementById('u-pos').value = u.position || "";
+                 document.getElementById('u-role').value = u.role;
+                 document.getElementById('u-status').value = u.status;
+                 document.getElementById('u-username').value = u.username;
+                 document.getElementById('u-password').value = u.password;
+             } else {
+                 document.getElementById('user-form-title').innerText = "Add New User";
+                 enInput.readOnly = false;
+                 enInput.style.backgroundColor = "#fff";
+                 document.getElementById('u-status').value = 'Active';
+             }
+             openModal('modal-user-form');
+        }
+        
+        function saveUserForm() {
+            const u = {
+                en: document.getElementById('u-en').value, name: document.getElementById('u-name').value, position: document.getElementById('u-pos').value,
+                role: document.getElementById('u-role').value, status: document.getElementById('u-status').value,
+                username: document.getElementById('u-username').value, password: document.getElementById('u-password').value
+            };
+            if(!u.en || !u.name) return alert("Fill all");
+            
+            // FIXED: Check for Duplicates / Update Correctly
+            if(document.getElementById('u-mode').value === 'create') {
+                if (state.users.find(x => x.en === u.en || x.username === u.username)) {
+                    return alert("Employee ID or Username already exists!");
+                }
+                state.users.push(u);
+            } else { 
+                const i = state.users.findIndex(x => x.en === u.en); 
+                // Check if username changed and conflicts (excluding self)
+                const conflict = state.users.find(x => x.username === u.username && x.en !== u.en);
+                if(conflict) return alert("Username already taken by another user.");
+                
+                state.users[i] = u; 
+            }
+            
+            saveData(); renderUserTable(); closeModal('modal-user-form');
+        }
+        
+        function delUser(en) {
+            if(en === '001' || en === state.currentUser.en) return alert("Cannot delete");
+            if(confirm("Delete?")) { state.users = state.users.filter(x => x.en !== en); saveData(); renderUserTable(); }
+        }
+
+        function resetUserData() { 
+            if(confirm('Warning: This will RESET ALL DATA (Parts, History, Requests) to default. Are you sure?')) { 
+                // Full Reset Logic
+                localStorage.removeItem('users');
+                localStorage.removeItem('parts');
+                localStorage.removeItem('requests');
+                localStorage.removeItem('po');
+                localStorage.removeItem('historyWD');
+                localStorage.removeItem('historyED');
+                localStorage.removeItem('supportTickets'); // Clear Support Tickets
+                location.reload(); 
+            } 
+        }
+    </script>
+</body>
+</html>
